@@ -1,6 +1,9 @@
 services:
   qbin:
-    image: naiher/qbin:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: qbin:custom
     container_name: qbin
     restart: always
     env_file:

@@ -1,6 +1,6 @@
 {
-  "name": "QBin",
-  "short_name": "QBin",
+  "name": "MPin",
+  "short_name": "MPin",
   "description": "轻量的 Cloud Note & PasteBin 替代方案，一键保存文本、代码、图片、视频等任意内容，分享更便捷！",
   "display": "standalone",
   "start_url": "/?source=pwa",

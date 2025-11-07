@@ -22,8 +22,8 @@ export const exactPaths = ["/favicon.ico", "/document", "/api/health", "/login",
 export const prefixPaths = ['/r/', '/e/', '/c/', '/m/', '/p/', '/static/', '/api/login/']
 export const basePath = Deno.cwd();
 
-export const EMAIL = get_env("ADMIN_EMAIL", "admin@qbin.github");
-export const PASSWORD = get_env("ADMIN_PASSWORD", "qbin");
+export const EMAIL = get_env("ADMIN_EMAIL", "admin@mpin.app");
+export const PASSWORD = get_env("ADMIN_PASSWORD", "mpin");
 export const QBIN_ENV = get_env("QBIN_ENV", "prod");
 // 校验访问路径和访问密码字符
 export const VALID_CHARS_REGEX = /^[a-zA-Z0-9-\.\_]+$/;
