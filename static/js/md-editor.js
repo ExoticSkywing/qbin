@@ -10,6 +10,11 @@ class QBinMDEditor extends QBinEditorBase {
         this.initialize();
     }
 
+    async initialize() {
+        await super.initialize();
+        this.initializeQuickShare();
+    }
+
     getThemePreference() {
         const savedTheme = localStorage.getItem('qbin-theme') || 'system';
         if (savedTheme === 'dark') return 'dark';
@@ -513,6 +518,213 @@ class QBinMDEditor extends QBinEditorBase {
                 message: error.message
             });
         }
+    }
+
+    // 初始化快捷分享功能
+    initializeQuickShare() {
+        const quickShareBtn = document.getElementById('quick-share-btn');
+        const manualShareBtn = document.getElementById('manual-share-btn');
+        const shareDropdownMenu = document.getElementById('share-dropdown-menu');
+        const shareOptions = document.querySelectorAll('.share-option');
+
+        if (!quickShareBtn || !manualShareBtn || !shareDropdownMenu) {
+            return;
+        }
+
+        // 一键快捷分享
+        quickShareBtn.addEventListener('click', () => {
+            const shareLink = this.getQuickShareLink();
+            this.copyShareLink(shareLink, quickShareBtn);
+        });
+
+        // 手动分享下拉菜单
+        manualShareBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isShowing = shareDropdownMenu.classList.contains('show');
+            
+            if (!isShowing) {
+                // 计算按钮位置
+                const rect = manualShareBtn.getBoundingClientRect();
+                const isMobile = window.innerWidth <= 768;
+                
+                if (isMobile) {
+                    // 移动端：居中显示，距离按钮下方
+                    shareDropdownMenu.style.top = `${rect.bottom + 4}px`;
+                    shareDropdownMenu.style.left = '';
+                    shareDropdownMenu.style.right = '';
+                } else {
+                    // 桌面端：右对齐按钮
+                    shareDropdownMenu.style.top = `${rect.bottom + 4}px`;
+                    shareDropdownMenu.style.right = `${window.innerWidth - rect.right}px`;
+                    shareDropdownMenu.style.left = 'auto';
+                }
+            }
+            
+            shareDropdownMenu.classList.toggle('show');
+        });
+
+        // 点击分享选项
+        shareOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const type = option.getAttribute('data-type');
+                const shareLink = this.getShareLinkByType(type);
+                this.copyShareLink(shareLink, option);
+                shareDropdownMenu.classList.remove('show');
+            });
+        });
+
+        // 点击外部关闭下拉菜单
+        document.addEventListener('click', (e) => {
+            if (!manualShareBtn.contains(e.target) && !shareDropdownMenu.contains(e.target)) {
+                shareDropdownMenu.classList.remove('show');
+            }
+        });
+
+        // 窗口大小改变时关闭下拉菜单
+        window.addEventListener('resize', () => {
+            shareDropdownMenu.classList.remove('show');
+        });
+
+        // 滚动时关闭下拉菜单
+        window.addEventListener('scroll', () => {
+            shareDropdownMenu.classList.remove('show');
+        }, true);
+    }
+
+    // 获取快捷分享链接（自动判断）
+    getQuickShareLink() {
+        const passwordInput = document.getElementById('password-input');
+        const keyInput = document.getElementById('key-input');
+        const hasPassword = passwordInput && passwordInput.value.trim();
+        const key = this.currentPath.key || (keyInput && keyInput.value.trim()) || 'untitled';
+
+        const baseUrl = window.location.origin;
+
+        if (hasPassword) {
+            // 有密码：使用预览模式（不带密码）
+            return `${baseUrl}/p/${key}`;
+        } else {
+            // 无密码：使用纯净只读模式
+            return `${baseUrl}/r/mdviewer?file=${key}`;
+        }
+    }
+
+    // 根据类型获取分享链接
+    getShareLinkByType(type) {
+        const keyInput = document.getElementById('key-input');
+        const key = this.currentPath.key || (keyInput && keyInput.value.trim()) || 'untitled';
+        const baseUrl = window.location.origin;
+
+        switch (type) {
+            case 'preview':
+                // 预览模式
+                return `${baseUrl}/p/${key}`;
+            case 'clean':
+                // 纯净只读模式
+                return `${baseUrl}/r/mdviewer?file=${key}`;
+            case 'render':
+                // 直接渲染模式
+                return `${baseUrl}/r/${key}`;
+            default:
+                return `${baseUrl}/p/${key}`;
+        }
+    }
+
+    // 复制分享链接到剪贴板
+    async copyShareLink(link, element) {
+        try {
+            await navigator.clipboard.writeText(link);
+            
+            // 显示成功反馈
+            const originalHTML = element.innerHTML;
+            element.classList.add('copied');
+            
+            if (element.tagName === 'BUTTON') {
+                element.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>已复制</span>
+                `;
+            } else {
+                // 对于下拉选项，显示临时提示
+                const toast = document.createElement('div');
+                toast.className = 'copy-toast';
+                toast.textContent = '✓ 链接已复制';
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #52c41a;
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    z-index: 10000;
+                    font-size: 14px;
+                    font-weight: 500;
+                    animation: slideInRight 0.3s ease;
+                `;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.animation = 'slideOutRight 0.3s ease';
+                    setTimeout(() => toast.remove(), 300);
+                }, 2000);
+            }
+            
+            // 恢复原始状态
+            setTimeout(() => {
+                element.classList.remove('copied');
+                if (element.tagName === 'BUTTON') {
+                    element.innerHTML = originalHTML;
+                }
+            }, 2000);
+            
+        } catch (error) {
+            console.error('复制失败:', error);
+            
+            // 降级方案：创建临时输入框
+            const tempInput = document.createElement('input');
+            tempInput.value = link;
+            tempInput.style.position = 'fixed';
+            tempInput.style.top = '-1000px';
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            
+            this.showToast('链接已复制（兼容模式）', 'success');
+        }
+    }
+
+    // 显示提示消息
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        const colors = {
+            success: '#52c41a',
+            error: '#ff4d4f',
+            info: '#1890ff'
+        };
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${colors[type] || colors.info};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            font-size: 14px;
+            font-weight: 500;
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.transition = 'opacity 0.3s ease';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
     }
 }
 

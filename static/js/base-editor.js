@@ -598,11 +598,28 @@ class QBinEditorBase {
         const generatePwdBtn = document.getElementById('generate-pwd-btn');
         const undoSettingsBtn = document.getElementById('undo-settings');
         const applySettingsBtn = document.getElementById('apply-settings');
+        const settingsStatus = document.getElementById('settings-status');
 
         // Store original values for reset functionality
         let originalKey = this.currentPath.key;
         let originalPwd = this.currentPath.pwd;
         let originalTitle = this.title ?? '';
+
+        // 检查是否有未保存的修改
+        const checkForChanges = () => {
+            const hasChanges = keyInput.value !== originalKey || 
+                               passwordInput.value !== originalPwd ||
+                               (titleInput && titleInput.value.trim() !== originalTitle);
+            
+            if (hasChanges) {
+                settingsStatus?.classList.add('show', 'warning');
+                applySettingsBtn?.classList.add('has-changes');
+            } else {
+                settingsStatus?.classList.remove('show', 'warning');
+                applySettingsBtn?.classList.remove('has-changes');
+            }
+            return hasChanges;
+        };
 
         // 初始化输入框值
         keyInput.value = this.currentPath.key;
@@ -621,6 +638,13 @@ class QBinEditorBase {
                 this.title = newTitle; // 更新类属性
                 this.updateDocumentTitle(newTitle);
                 titleInput.classList.add('input-modified');
+                const wrapper = titleInput.closest('.input-wrapper');
+                if (wrapper && newTitle !== originalTitle) {
+                    wrapper.classList.add('modified');
+                } else if (wrapper) {
+                    wrapper.classList.remove('modified');
+                }
+                checkForChanges();
             });
         }
 
@@ -675,10 +699,24 @@ class QBinEditorBase {
         keyInput.addEventListener('input', () => {
             updateURLHandler();
             keyInput.classList.add('input-modified');
+            const wrapper = keyInput.closest('.input-wrapper');
+            if (wrapper && keyInput.value !== originalKey) {
+                wrapper.classList.add('modified');
+            } else if (wrapper) {
+                wrapper.classList.remove('modified');
+            }
+            checkForChanges();
         });
         passwordInput.addEventListener('input', () => {
             updateURLHandler();
             passwordInput.classList.add('input-modified');
+            const wrapper = passwordInput.closest('.input-wrapper');
+            if (wrapper && passwordInput.value !== originalPwd) {
+                wrapper.classList.add('modified');
+            } else if (wrapper) {
+                wrapper.classList.remove('modified');
+            }
+            checkForChanges();
         });
 
         const resetInputModification = (input) => {
@@ -733,18 +771,52 @@ class QBinEditorBase {
         const resetSettings = () => {
             keyInput.value = originalKey;
             passwordInput.value = originalPwd;
+            if (titleInput) titleInput.value = originalTitle;
             updateURLHandler();
 
             // 添加动画效果，仅对路径和密码输入框
             keyInput.classList.add('highlight-input');
             passwordInput.classList.add('highlight-input');
+            if (titleInput) titleInput.classList.add('highlight-input');
             setTimeout(() => {
                 keyInput.classList.remove('highlight-input');
                 passwordInput.classList.remove('highlight-input');
+                if (titleInput) titleInput.classList.remove('highlight-input');
             }, 500);
 
+            // 清除修改标记
             resetInputModification(keyInput);
             resetInputModification(passwordInput);
+            if (titleInput) resetInputModification(titleInput);
+            
+            // 清除输入框wrapper的modified状态
+            [keyInput, passwordInput, titleInput].forEach(input => {
+                if (input) {
+                    const wrapper = input.closest('.input-wrapper');
+                    if (wrapper) wrapper.classList.remove('modified');
+                }
+            });
+
+            // 隐藏状态栏，显示成功提示
+            settingsStatus?.classList.remove('show', 'warning');
+            settingsStatus?.classList.add('success');
+            const statusText = settingsStatus?.querySelector('.status-text');
+            const statusIcon = settingsStatus?.querySelector('.status-icon');
+            if (statusText) statusText.textContent = '已撤销所有修改';
+            if (statusIcon) {
+                statusIcon.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
+            }
+            settingsStatus?.classList.add('show');
+            
+            setTimeout(() => {
+                settingsStatus?.classList.remove('show', 'success');
+                if (statusText) statusText.textContent = '修改后需点击"保存"生效';
+                if (statusIcon) {
+                    statusIcon.innerHTML = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
+                }
+            }, 2000);
+
+            applySettingsBtn?.classList.remove('has-changes');
 
             this.updateUploadStatus("已撤销访问设置", "success");
             setTimeout(() => this.updateUploadStatus(""), 2000);
@@ -754,18 +826,60 @@ class QBinEditorBase {
         const saveContent = () => {
             const content = this.getEditorContent();
             if (content) {
+                // 显示保存动画
+                applySettingsBtn?.classList.add('saving');
+                const buttonText = applySettingsBtn?.querySelector('svg').nextSibling;
+                const originalText = buttonText?.textContent;
+                if (buttonText) buttonText.textContent = ' 保存中...';
+
                 if (titleInput) {
                     this.title = titleInput.value.trim(); // 更新类属性
                 }
 
                 this.handleUpload(content, this.contentType);
                 this.saveToLocalCache(true);
+                
+                // 更新原始值
                 originalKey = this.currentPath.key;
                 originalPwd = this.currentPath.pwd;
                 if (titleInput) originalTitle = titleInput.value.trim();
-                resetInputModification(keyInput);
-                resetInputModification(passwordInput);
-                if (titleInput) resetInputModification(titleInput);
+                
+                // 延迟显示成功状态，给保存操作一点时间
+                setTimeout(() => {
+                    applySettingsBtn?.classList.remove('saving', 'has-changes');
+                    if (buttonText) buttonText.textContent = originalText;
+
+                    resetInputModification(keyInput);
+                    resetInputModification(passwordInput);
+                    if (titleInput) resetInputModification(titleInput);
+                    
+                    // 清除输入框wrapper的modified状态
+                    [keyInput, passwordInput, titleInput].forEach(input => {
+                        if (input) {
+                            const wrapper = input.closest('.input-wrapper');
+                            if (wrapper) wrapper.classList.remove('modified');
+                        }
+                    });
+
+                    // 显示成功提示
+                    settingsStatus?.classList.remove('warning');
+                    settingsStatus?.classList.add('success');
+                    const statusText = settingsStatus?.querySelector('.status-text');
+                    const statusIcon = settingsStatus?.querySelector('.status-icon');
+                    if (statusText) statusText.textContent = '✓ 设置已保存并生效';
+                    if (statusIcon) {
+                        statusIcon.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
+                    }
+                    settingsStatus?.classList.add('show');
+                    
+                    setTimeout(() => {
+                        settingsStatus?.classList.remove('show', 'success');
+                        if (statusText) statusText.textContent = '修改后需点击"保存"生效';
+                        if (statusIcon) {
+                            statusIcon.innerHTML = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
+                        }
+                    }, 3000);
+                }, 500);
             } else {
                 this.updateUploadStatus("无法保存空内容", "info");
                 setTimeout(() => this.updateUploadStatus(""), 2000);
