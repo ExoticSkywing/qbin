@@ -84,7 +84,7 @@ class QBinMDEditor extends QBinEditorBase {
             iconStyle: 'width: 18px; height: 18px; vertical-align: middle;',
           },
           onClick: () => {
-            window.open('/r/guide', '_blank', 'noopener,noreferrer');
+            window.open('/r/mdviwer?file=guide', '_blank', 'noopener,noreferrer');
           }
         });
         const toolbars = {

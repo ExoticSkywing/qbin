@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Markdown 文档</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #error {
+            text-align: center;
+            padding: 40px 20px;
+            color: #e74c3c;
+        }
+        #error button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #error button:hover {
+            background: #2980b9;
+        }
+        #content {
+            display: none;
+        }
+        #content h1, #content h2, #content h3, #content h4, #content h5, #content h6 {
+            margin-top: 24px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+        #content h1 {
+            font-size: 2em;
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.3em;
+        }
+        #content h2 {
+            font-size: 1.5em;
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.3em;
+        }
+        #content h3 { font-size: 1.25em; }
+        #content h4 { font-size: 1em; }
+        #content h5 { font-size: 0.875em; }
+        #content h6 { font-size: 0.85em; color: #6a737d; }
+        #content p {
+            margin-bottom: 16px;
+        }
+        #content ul, #content ol {
+            padding-left: 2em;
+            margin-bottom: 16px;
+        }
+        #content li {
+            margin-bottom: 4px;
+        }
+        #content pre {
+            padding: 16px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+        #content code {
+            padding: 0.2em 0.4em;
+            margin: 0;
+            font-size: 85%;
+            background-color: rgba(27,31,35,0.05);
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #content pre code {
+            padding: 0;
+            background-color: transparent;
+        }
+        #content blockquote {
+            padding: 0 1em;
+            color: #6a737d;
+            border-left: 0.25em solid #dfe2e5;
+            margin: 0 0 16px 0;
+        }
+        #content a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        #content a:hover {
+            text-decoration: underline;
+        }
+        #content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin: 16px 0;
+        }
+        #content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 16px;
+            display: block;
+            overflow: auto;
+        }
+        #content table th, #content table td {
+            padding: 6px 13px;
+            border: 1px solid #dfe2e5;
+        }
+        #content table th {
+            font-weight: 600;
+            background-color: #f6f8fa;
+        }
+        #content table tr {
+            background-color: #fff;
+            border-top: 1px solid #c6cbd1;
+        }
+        #content table tr:nth-child(2n) {
+            background-color: #f6f8fa;
+        }
+        #content hr {
+            height: 0.25em;
+            padding: 0;
+            margin: 24px 0;
+            background-color: #e1e4e8;
+            border: 0;
+        }
+        .toolbar {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+        }
+        .toolbar button {
+            padding: 12px 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: all 0.3s;
+        }
+        .toolbar button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        @media print {
+            .toolbar { display: none; }
+            .container { box-shadow: none; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loading">
+            <div class="spinner"></div>
+            <p>加载中...</p>
+        </div>
+        <div id="error" style="display: none;"></div>
+        <div id="content"></div>
+    </div>
+
+    <div class="toolbar" id="toolbar" style="display: none;">
+        <button onclick="window.print()" title="打印">🖨️ 打印</button>
+        <button onclick="copyMarkdown()" title="复制 Markdown">📋 复制</button>
+        <button onclick="scrollToTop()" title="回到顶部">⬆️ 顶部</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
+    
+    <script>
+        // ============ 配置区域 ============
+        const CONFIG = {
+            // 默认域名（可修改为您的域名）
+            defaultDomain: 'https://mpin.tsmoe.com',
+            // 默认文件 ID（如果 URL 没有指定）
+            defaultFileId: 'md2html',
+            // 缓存过期时间（毫秒）
+            cacheExpiry: 24 * 60 * 60 * 1000,
+            // 是否启用缓存
+            enableCache: false
+        };
+
+        // ============ 核心功能 ============
+        let currentMarkdown = '';
+
+        // 获取 URL 参数
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            const fileId = params.get('file') || params.get('id') || CONFIG.defaultFileId;
+            const domain = params.get('domain') || CONFIG.defaultDomain;
+            const password = params.get('pwd') || params.get('password') || '';
+            return { fileId, domain, password };
+        }
+
+        // 构建文件 URL
+        function buildFileUrl(domain, fileId, password) {
+            let url = `${domain}/r/${fileId}`;
+            if (password) {
+                url += `/${password}`;
+            }
+            return url;
+        }
+
+        // 加载 Markdown 内容
+        async function loadMarkdown() {
+            const { fileId, domain, password } = getUrlParams();
+            const url = buildFileUrl(domain, fileId, password);
+            const cacheKey = `markdown-cache-${url}`;
+
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const contentEl = document.getElementById('content');
+            const toolbarEl = document.getElementById('toolbar');
+
+            try {
+                let markdown = null;
+
+                // 尝试从缓存加载
+                if (CONFIG.enableCache) {
+                    const cached = localStorage.getItem(cacheKey);
+                    if (cached) {
+                        try {
+                            const cache = JSON.parse(cached);
+                            if (Date.now() - cache.timestamp < CONFIG.cacheExpiry) {
+                                markdown = cache.content;
+                                console.log('从缓存加载');
+                            }
+                        } catch (e) {
+                            console.warn('缓存解析失败', e);
+                        }
+                    }
+                }
+
+                // 从服务器加载
+                if (!markdown) {
+                    console.log('从服务器加载:', url);
+                    const response = await fetch(url, { cache: 'no-cache' });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    markdown = await response.text();
+
+                    // 保存到缓存
+                    if (CONFIG.enableCache) {
+                        localStorage.setItem(cacheKey, JSON.stringify({
+                            content: markdown,
+                            timestamp: Date.now()
+                        }));
+                    }
+                }
+
+                currentMarkdown = markdown;
+
+                // 渲染 Markdown
+                marked.setOptions({
+                    highlight: function(code, lang) {
+                        if (lang && hljs.getLanguage(lang)) {
+                            return hljs.highlight(code, { language: lang }).value;
+                        }
+                        return hljs.highlightAuto(code).value;
+                    },
+                    breaks: true,
+                    gfm: true,
+                    headerIds: true,
+                    mangle: false,
+                });
+
+                const html = marked.parse(markdown);
+                contentEl.innerHTML = html;
+
+                // 设置页面标题
+                const firstH1 = contentEl.querySelector('h1');
+                if (firstH1) {
+                    document.getElementById('page-title').textContent = firstH1.textContent;
+                }
+
+                // 显示内容
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'none';
+                contentEl.style.display = 'block';
+                toolbarEl.style.display = 'flex';
+
+                // 代码高亮
+                contentEl.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+
+            } catch (error) {
+                console.error('加载失败:', error);
+                loadingEl.style.display = 'none';
+                contentEl.style.display = 'none';
+                errorEl.style.display = 'block';
+                errorEl.innerHTML = `
+                    <h3>⚠️ 加载失败</h3>
+                    <p>${error.message}</p>
+                    <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                        URL: ${url}
+                    </p>
+                    <button onclick="location.reload()">🔄 重新加载</button>
+                `;
+            }
+        }
+
+        // 复制 Markdown 原文
+        function copyMarkdown() {
+            if (!currentMarkdown) return;
+            
+            navigator.clipboard.writeText(currentMarkdown).then(() => {
+                alert('✅ Markdown 已复制到剪贴板');
+            }).catch(() => {
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = currentMarkdown;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('✅ Markdown 已复制到剪贴板');
+            });
+        }
+
+        // 滚动到顶部
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', loadMarkdown);
+    </script>
+</body>
+</html>
+
