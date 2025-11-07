@@ -3,47 +3,12 @@ services:
     image: naiher/qbin:latest
     container_name: qbin
     restart: always
-    environment:
-      # 必选环境变量
-      - ADMIN_EMAIL=admin@qbin.github  # 请修改为你的邮箱
-      - ADMIN_PASSWORD=qbin  # 请修改为安全的密码
-      - JWT_SECRET=your_jwt_secret  # 请修改为随机安全字符串
-
-      # 可选环境变量
-      - PORT=8000
-      - TOKEN_EXPIRE=31536000
-      - MAX_UPLOAD_FILE_SIZE=52428800
-      - DB_CLIENT=sqlite
-      - DATABASE_URL="file:/app/data/qbin_local.db"
-      - ENABLE_ANONYMOUS_ACCESS=1
-
-      # GitHub OAuth配置（可选，如需使用请取消注释并填写）
-      # - GITHUB_CLIENT_ID=your_github_client_id
-      # - GITHUB_CLIENT_SECRET=your_github_client_secret
-      # - GITHUB_CALLBACK_URL=http://your-domain:8000/api/login/oauth2/callback/github
-
-      # Google OAuth配置（可选，如需使用请取消注释并填写）
-      # - GOOGLE_CLIENT_ID=your_google_client_id
-      # - GOOGLE_CLIENT_SECRET=your_google_client_secret
-      # - GOOGLE_CALLBACK_URL=http://your-domain:8000/api/login/oauth2/callback/google
-
-      # Microsoft OAuth配置（可选，如需使用请取消注释并填写）
-      # - MICROSOFT_CLIENT_ID=74xxxx-xxxx-xxxx-xxxx-xxxxxxxxxx  # Microsoft应用ID
-      # - MICROSOFT_CLIENT_SECRET=25xxxx-xxxx-xxxx-xxxx-xxxxxxxxxx  # Microsoft应用密钥
-      # - MICROSOFT_CALLBACK_URL=http://localhost:8000/api/login/oauth2/callback/microsoft  # Microsoft登录回调地址
-
-      # Custom OAuth配置（可选，如需使用请取消注释并填写）
-      # - OAUTH_CLIENT_ID=V4HmbQixxxxxxxxxxxxCJ2CVypqL
-      # - OAUTH_CLIENT_SECRET=hZtE3cxxxxxxxxxxxxxkZ0al01Hi
-      # - OAUTH_AUTH_URL=https://provider.example.com/oauth2/authorize
-      # - OAUTH_TOKEN_URL=https://provider.example.com/oauth2/token
-      # - OAUTH_CALLBACK_URL=http://localhost:8000/api/login/oauth2/callback/custom
-      # - OAUTH_SCOPES=user:profile
-      # - OAUTH_USER_INFO_URL=https://provider.example.com/api/user
+    env_file:
+      - .env  # 所有配置从 .env 文件加载
     volumes:
       - ~/qbin-data:/app/data  # 持久化存储数据库文件
     ports:
-      - "8000:8000"
+      - "8086:8000"
     networks:
       - qbin-network
     healthcheck:
@@ -59,5 +24,5 @@ volumes:
 
 networks:
   qbin-network:
-    driver: bridge
-    internal: false
+    external: true
+    name: 1panel-network
