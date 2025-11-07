@@ -47,9 +47,27 @@ export async function isCached(key: string, pwd?: string | undefined, repo): Pro
   }
 
   const kvResult = await kv.get([PASTE_STORE, key]);
-  if (!kvResult.value) return null;
-  memCache.set(key, kvResult.value);   // 减少内查询
-  return kvResult.value;
+  if (kvResult.value) {
+    memCache.set(key, kvResult.value);   // 减少内查询
+    return kvResult.value;
+  }
+  
+  // KV 缓存未命中，从数据库回退查询（只查 metadata，不含 content）
+  try {
+    const dbMeta = await repo.getByFkey(key);
+    if (dbMeta) {
+      // 将 metadata 缓存到 KV（不含 content，减少内存占用）
+      const metaOnly = { ...dbMeta };
+      delete metaOnly.content;
+      await kv.set([PASTE_STORE, key], metaOnly);
+      memCache.set(key, metaOnly);
+      return metaOnly;
+    }
+  } catch (error) {
+    console.error('Database fallback error in isCached:', error);
+  }
+  
+  return null;
 }
 
 export async function checkCached(key: string, pwd?: string | undefined, repo): Promise<Metadata | null> {
