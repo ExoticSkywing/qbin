@@ -82,6 +82,9 @@
     z-index: 1000;
     border: 1px solid var(--section-border);
     background: var(--panel-bg) var(--panel-gradient);
+    max-height: calc(100vh - 72px);
+    overflow-y: auto;
+    box-sizing: border-box;
 }
 
 /* 面板显示状态 */
@@ -697,27 +700,38 @@ input:-webkit-autofill:active {
     align-items: center;
     justify-content: center;
     flex: 1;
-    height: 34px;
-    padding: 0 12px;
+    height: 36px;
+    padding: 0 14px;
     border-radius: 8px;
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    border: 1px solid var(--section-border);
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.panel-button svg {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    flex-shrink: 0;
 }
 
 .panel-button.primary {
-    background: var(--section-bg);
-    color: var(--label-color);
-    border-color: var(--section-border);
-    box-shadow: var(--section-shadow);
+    background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(24, 144, 255, 0.35);
 }
 
 .panel-button.secondary {
-    background: var(--section-bg);
-    color: var(--option-text-color);
-    box-shadow: var(--section-shadow);
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-color);
+}
+
+.dark-theme .panel-button.secondary {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .panel-button:hover {
@@ -725,30 +739,29 @@ input:-webkit-autofill:active {
 }
 
 .panel-button.primary:hover {
-    background: var(--section-hover-bg);
-    border-color: var(--section-border);
-    box-shadow: var(--section-hover-shadow);
+    background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.45);
 }
 
 .panel-button.secondary:hover {
-    background: var(--section-hover-bg);
-    box-shadow: var(--section-hover-shadow);
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.dark-theme .panel-button.secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .panel-button:active {
     transform: translateY(0);
-}
-
-/* 移除图标，简化按钮设计 */
-.panel-button svg {
-    display: none;
+    box-shadow: none;
 }
 
 /* 移动端适配优化 */
 @media (max-width: 768px) {
     .panel-button {
-        height: 32px;
-        font-size: 12px;
+        height: auto;
+        padding: 14px 20px;
+        font-size: 14px;
     }
     
     .panel-footer {
